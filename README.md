@@ -12,7 +12,7 @@ htop for Claude Code sessions — per-agent token usage, cost, and tool call mon
 ## Install
 
 ```bash
-uv tool install git+https://github.com/artizanal-ai/cctop
+uv tool install git+https://github.com/artisanal-ai/cctop
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ Usage: cctop [OPTIONS]
 ## Development
 
 ```bash
-git clone git@github.com:artizanal-ai/cctop.git
+git clone git@github.com:artisanal-ai/cctop.git
 cd cctop
 uv run cctop            # run locally
 make check              # lint + typecheck + tests
