@@ -1,0 +1,40 @@
+[project]
+name = "cctop"
+version = "0.1.0"
+description = "htop for Claude Code sessions"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["rich>=15.0", "typer>=0.25"]
+
+[build-system]
+requires = ["uv_build>=0.11.6"]
+build-backend = "uv_build"
+
+[project.scripts]
+cctop = "cctop.app:app"
+
+[dependency-groups]
+dev = ["pytest>=9.0", "pytest-cov>=7.1", "ruff>=0.15", "mypy>=1.20"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "W",    # pycodestyle warnings
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "PLE",  # pylint errors
+    "PLW",  # pylint warnings
+    "RUF",  # ruff-specific
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
