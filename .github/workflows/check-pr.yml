@@ -1,0 +1,13 @@
+name: "Check PR"
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: ghcr.io/astral-sh/uv:python3.13-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - run: apk add --no-cache make
+      - run: make check

@@ -1,0 +1,38 @@
+[project]
+name = "cctop"
+version = "0.1.0"
+description = "htop for Claude Code sessions"
+requires-python = ">=3.13"
+dependencies = ["rich>=13.0", "typer>=0.9"]
+
+[build-system]
+requires = ["uv_build>=0.11.6"]
+build-backend = "uv_build"
+
+[project.scripts]
+cctop = "cctop.app:app"
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "ruff", "mypy"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "W",    # pycodestyle warnings
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "PLE",  # pylint errors
+    "PLW",  # pylint warnings
+    "RUF",  # ruff-specific
+]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
