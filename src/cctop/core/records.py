@@ -216,7 +216,7 @@ def raw_subagents_records(path: Path) -> list[AgentRecords]:
         (
             f.stem.removeprefix(_AGENT_FILE_PREFIX),
             f.stat().st_mtime,
-            [json.loads(line) for line in open(f)],
+            raw_records(f),
             json.loads(meta.read_text()) if meta.is_file() else None,
         )
         for f in sorted(subagent_dir.glob("agent-*.jsonl"))

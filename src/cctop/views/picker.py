@@ -9,7 +9,7 @@ from rich.text import Text
 from cctop.core import Session
 from cctop.views.keys import Key, KeyListener
 from cctop.views.protocols import Action, LiveViewFactory, Row, View
-from cctop.views.style import _C_ACCENT, _C_DIM
+from cctop.views.style import _C_ACCENT, _C_DIM, _GUTTER
 
 _KEYS: dict[Key, Action] = {
     Key.QUIT: Action.QUIT,
@@ -52,7 +52,6 @@ class SessionPicker(View[Session.Ref | None]):
                 live.update(self._render(sessions, cursor, console.height))
 
     def _render(self, sessions: list[Session.Ref], cursor: int, term_height: int = 0) -> Group:
-        gutter = "   "
         columns = (
             Column("", width=1, no_wrap=True),
             Column("PROJECT", no_wrap=True, ratio=1),
@@ -68,7 +67,7 @@ class SessionPicker(View[Session.Ref | None]):
         for row in rows:
             table.add_row(*row)
 
-        title = f"{gutter}cctop — select a session" if sessions else f"{gutter}cctop — no sessions found"
+        title = f"{_GUTTER}cctop — select a session" if sessions else f"{_GUTTER}cctop — no sessions found"
         padding = max(1, term_height - 5 - len(rows)) if term_height > 0 else 1
         return Group(
             Text(""),
@@ -76,7 +75,7 @@ class SessionPicker(View[Session.Ref | None]):
             Text(""),
             table,
             *([Text("")] * padding),
-            Text(f"{gutter}↑/↓ navigate  enter/→ select  d delete  q quit", style=_C_DIM),
+            Text(f"{_GUTTER}↑/↓ navigate  enter/→ select  d delete  q quit", style=_C_DIM),
         )
 
     def _row(self, ref: Session.Ref, selected: bool) -> Row:

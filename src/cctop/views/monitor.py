@@ -11,7 +11,7 @@ from cctop.core import Agent, Session
 from cctop.core.usage import Usage
 from cctop.views.keys import Key, KeyListener
 from cctop.views.protocols import Action, LiveViewFactory, Row, View
-from cctop.views.style import _C_DIM, _C_ERR, _C_OK, _C_RUNNING, _C_WARN
+from cctop.views.style import _C_DIM, _C_ERR, _C_OK, _C_RUNNING, _C_WARN, _GUTTER
 
 _KEYS: dict[Key, Action] = {
     Key.QUIT: Action.QUIT,
@@ -91,7 +91,6 @@ class SessionMonitor(View[Session]):
 
     def _render(self, session: Session, term_height: int = 0) -> tuple[Group, int]:
         fixed_overhead = 5
-        gutter = "   "
         title = f"cctop — {session.ref.project}  ({session.ref.short_id})"
 
         all_rows = self._collect_rows(session)
@@ -116,12 +115,12 @@ class SessionMonitor(View[Session]):
         footer.add_column(ratio=1)
         footer.add_column(justify="right", ratio=1)
         footer.add_column(width=1, no_wrap=True)
-        footer.add_row(Text(f"{gutter}{keys_text}", style=_C_DIM), self._status_legend(), "")
+        footer.add_row(Text(f"{_GUTTER}{keys_text}", style=_C_DIM), self._status_legend(), "")
 
         padding = max(1, term_height - fixed_overhead - len(visible)) if term_height > 0 else 1
 
         return Group(
-            Text(""), Text(f"{gutter}{title}", style="bold"),
+            Text(""), Text(f"{_GUTTER}{title}", style="bold"),
             Text(""), table,
             *([Text("")] * padding), footer,
         ), clamped
