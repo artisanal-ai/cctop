@@ -84,27 +84,27 @@ def test_collect_rows_with_tools(tmp_path: Path) -> None:
     a = make_agent(model_usage={SONNET_4_5: u})
     s = _session(tmp_path, agents=[a], model_usage={SONNET_4_5: Usage(input_tokens=50)})
     rows = _monitor(tmp_path, show_tools=True)._collect_rows(s)
-    tool_rows = [r for r in rows if isinstance(r[0], Text) and "Read" in r[0].plain]
+    tool_rows = [r for r in rows if isinstance(r[1], Text) and "Read" in r[1].plain]
     assert len(tool_rows) == 1
 
 
 def test_totals_row_length(tmp_path: Path) -> None:
     s = _session(tmp_path, model_usage={SONNET_4_5: Usage(input_tokens=100)})
-    assert len(_monitor(tmp_path)._totals_row(s)) == 11
+    assert len(_monitor(tmp_path)._totals_row(s)) == 13
 
 
 def test_session_row_length(tmp_path: Path) -> None:
     s = _session(tmp_path, model_usage={SONNET_4_5: Usage(input_tokens=100)})
-    assert len(_monitor(tmp_path)._session_row(s)) == 11
+    assert len(_monitor(tmp_path)._session_row(s)) == 13
 
 
 def test_agent_row_length(tmp_path: Path) -> None:
     a = make_agent(model_usage={SONNET_4_5: Usage(input_tokens=100)})
-    assert len(_monitor(tmp_path)._agent_row(a, "done")) == 11
+    assert len(_monitor(tmp_path)._agent_row(a, "done")) == 13
 
 
 def test_tool_row_length() -> None:
-    assert len(_monitor()._tool_row("Read", Usage.Tool(calls=5, errors=1))) == 11
+    assert len(_monitor()._tool_row("Read", Usage.Tool(calls=5, errors=1))) == 13
 
 
 @patch("time.sleep")

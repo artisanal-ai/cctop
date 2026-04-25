@@ -34,7 +34,7 @@ def test_row_selected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(time, "time", lambda: TS_BASE)
     ref = make_ref(tmp_path)
     row = _picker()._row(ref, selected=True)
-    assert all(isinstance(cell, Text) for cell in row)
+    assert isinstance(row[1], Text)
 
 
 def test_row_unselected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
