@@ -49,20 +49,18 @@ class Agent:
         return AgentStatus.RUNNING if self.usage.total_tokens > 0 else AgentStatus.DISPATCHED
 
 
-def agent(records: list[Record], meta: Record | None) -> Agent:
+def agent(agent_id: str, dispatched_ts: float, records: list[Record], meta: Record | None) -> Agent:
     msgs = list(assistant_records(records))
     user = list(user_records(records))
-    assert msgs
-
     m = meta or {}
     timestamps = [r.timestamp for r in msgs if r.timestamp]
 
     return Agent(
-        id=next(r.id for r in msgs if r.id),
+        id=next((r.id for r in msgs if r.id), agent_id),
         type=m.get("agentType") or None,
         description=m.get("description") or None,
-        first_ts=min(timestamps) if timestamps else 0.0,
-        last_ts=max(timestamps) if timestamps else 0.0,
+        first_ts=min(timestamps, default=dispatched_ts),
+        last_ts=max(timestamps, default=dispatched_ts),
         model_usage=model_usage(msgs, user),
     )
 

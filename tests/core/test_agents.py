@@ -50,7 +50,7 @@ def test_agent_internal_status(tokens: int, expected: AgentStatus) -> None:
 def test_agent_factory() -> None:
     records = [assistant_rec(msg_id="m1", agent_id="abc123", usage={"input_tokens": 500, "output_tokens": 200})]
     meta: dict[str, Any] = {"agentType": "Explore", "description": "search files"}
-    a = agent(records, meta)
+    a = agent("abc123", TS_BASE, records, meta)
     assert a.id == "abc123"
     assert a.type == "Explore"
     assert a.description == "search files"
@@ -59,7 +59,27 @@ def test_agent_factory() -> None:
 
 def test_agent_factory_no_meta() -> None:
     records = [assistant_rec(msg_id="m1", agent_id="abc123", usage={"input_tokens": 500, "output_tokens": 200})]
-    a = agent(records, None)
+    a = agent("abc123", TS_BASE, records, None)
     assert a.id == "abc123"
     assert a.type is None
     assert a.description is None
+
+
+def test_agent_factory_no_msgs() -> None:
+    meta: dict[str, Any] = {"agentType": "Explore", "description": "search files"}
+    a = agent("abc123", TS_BASE, [], meta)
+    assert a.id == "abc123"
+    assert a.type == "Explore"
+    assert a.description == "search files"
+    assert a.first_ts == TS_BASE
+    assert a.last_ts == TS_BASE
+    assert a.usage.total_tokens == 0
+    assert a.internal_status == AgentStatus.DISPATCHED
+
+
+def test_agent_factory_no_msgs_no_meta() -> None:
+    a = agent("abc123", TS_BASE, [], None)
+    assert a.id == "abc123"
+    assert a.type is None
+    assert a.first_ts == TS_BASE
+    assert a.internal_status == AgentStatus.DISPATCHED

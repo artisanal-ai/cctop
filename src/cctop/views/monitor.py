@@ -11,7 +11,7 @@ from cctop.core import Agent, Session
 from cctop.core.usage import Usage
 from cctop.views.keys import Key, KeyListener
 from cctop.views.protocols import Action, LiveViewFactory, Row, View
-from cctop.views.style import _C_DIM, _C_ERR, _C_OK, _C_RUNNING, _C_WARN
+from cctop.views.style import _C_DIM, _C_ERR, _C_OK, _C_RUNNING, _C_WARN, _GUTTER
 
 _KEYS: dict[Key, Action] = {
     Key.QUIT: Action.QUIT,
@@ -33,7 +33,7 @@ _STATUS: dict[str, _StatusInfo] = {
     "running":      _StatusInfo("●", "running",      (f"bold {_C_RUNNING}", f"dim {_C_RUNNING}")),
     "rate_limited": _StatusInfo("✗", "rate limited", (_C_WARN, None)),
     "failed":       _StatusInfo("✗", "failed",       (_C_ERR, None)),
-    "pending":      _StatusInfo("◌", "idle",         (_C_DIM, None)),
+    "dispatched":   _StatusInfo("◌", "dispatched",   (_C_DIM, None)),
     "inactive":     _StatusInfo("○", "inactive",     (_C_DIM, None)),
 }
 
@@ -90,12 +90,12 @@ class SessionMonitor(View[Session]):
                     live.update(content)
 
     def _render(self, session: Session, term_height: int = 0) -> tuple[Group, int]:
-        frame_overhead = 6
+        fixed_overhead = 5
         title = f"cctop — {session.ref.project}  ({session.ref.short_id})"
 
         all_rows = self._collect_rows(session)
         total = len(all_rows)
-        max_visible = max(term_height - frame_overhead, 5) if term_height > 0 else total
+        max_visible = max(term_height - fixed_overhead - 1, 5) if term_height > 0 else total
         max_scroll = max(0, total - max_visible)
         clamped = min(self.scroll, max_scroll)
         scrollable = total > max_visible
@@ -111,24 +111,25 @@ class SessionMonitor(View[Session]):
         if scrollable:
             keys_text += f"  ({clamped + 1}–{min(clamped + max_visible, total)}/{total})"  # noqa: RUF001
 
-        footer = Table(show_header=False, box=None, padding=(0, 1), expand=True)
+        footer = Table(show_header=False, box=None, padding=(0, 1), expand=True, pad_edge=False)
         footer.add_column(ratio=1)
         footer.add_column(justify="right", ratio=1)
-        footer.add_row(Text(f"  {keys_text}", style=_C_DIM), self._status_legend())
+        footer.add_column(width=1, no_wrap=True)
+        footer.add_row(Text(f"{_GUTTER}{keys_text}", style=_C_DIM), self._status_legend(), "")
 
-        padding = max(1, term_height - frame_overhead - len(visible)) if term_height > 0 else 1
+        padding = max(1, term_height - fixed_overhead - len(visible)) if term_height > 0 else 1
 
         return Group(
-            Text(""), Text(f"  {title}", style="bold"),
+            Text(""), Text(f"{_GUTTER}{title}", style="bold"),
             Text(""), table,
             *([Text("")] * padding), footer,
         ), clamped
 
-    _COLUMN_COUNT = 11
+    _COLUMN_COUNT = 13
 
     def _collect_rows(self, session: Session) -> list[Row]:
         sep_cell = Text("╌" * 120, style=_C_DIM, overflow="crop")
-        sep = (sep_cell,) * self._COLUMN_COUNT
+        sep: Row = ("", *((sep_cell,) * (self._COLUMN_COUNT - 2)), "")
         rows: list[Row] = []
         if session.agents or session.usage.total_tokens:
             rows.append(self._totals_row(session))
@@ -150,8 +151,9 @@ class SessionMonitor(View[Session]):
     def _build_table(self, rows: list[Row]) -> Table:
         table = Table(
             show_header=True, header_style="bold",
-            box=None, padding=(0, 1), expand=True,
+            box=None, padding=(0, 1), expand=True, pad_edge=False,
         )
+        table.add_column("",        width=1, no_wrap=True)
         table.add_column("AGENT",   no_wrap=True, ratio=1)
         table.add_column("STATUS",  justify="center", width=6, no_wrap=True)
         table.add_column("TIME",    justify="right", width=8, no_wrap=True)
@@ -163,6 +165,7 @@ class SessionMonitor(View[Session]):
         table.add_column("COST",    justify="right", width=8, no_wrap=True)
         table.add_column("TOOLS",   justify="right", width=5, no_wrap=True)
         table.add_column("OK%",     justify="right", width=4, no_wrap=True)
+        table.add_column("",        width=1, no_wrap=True)
         for row in rows:
             table.add_row(*row)
         return table
@@ -175,6 +178,7 @@ class SessionMonitor(View[Session]):
         total = len(session.agents) + 1
         done = session.done_count + (0 if session.active else 1)
         return (
+            "",
             Text("", style="bold"),
             Text(f"{done}/{total}", style="bold"),
             Text(self._duration(elapsed), style="bold"),
@@ -186,6 +190,7 @@ class SessionMonitor(View[Session]):
             Text(self._cost(session.total_cost), style=f"bold {_C_WARN}"),
             Text(str(tc), style="bold"),
             self._success_rate(tc, te),
+            "",
         )
 
     def _pulse_style(self, s: _StatusInfo) -> str:
@@ -196,6 +201,7 @@ class SessionMonitor(View[Session]):
         s = _STATUS["running" if session.active else "inactive"]
         sty = s.pulse[0]
         return (
+            "",
             Text(f"claude ({session.ref.project})", style=sty),
             Text(s.icon, style=self._pulse_style(s)),
             self._duration(session.elapsed_seconds if session.active else session.wall_seconds),
@@ -207,6 +213,7 @@ class SessionMonitor(View[Session]):
             self._cost(session.cost),
             str(session.usage.tool_calls) if session.usage.tool_calls else "—",
             self._success_rate(session.usage.tool_calls, session.usage.tool_errors),
+            "",
         )
 
     def _agent_row(self, a: Agent, status: str) -> Row:
@@ -219,29 +226,33 @@ class SessionMonitor(View[Session]):
             else str(tc) if tc else "—"
         )
         return (
+            "",
             Text(self._agent_name(a), style=sty),
             Text(s.icon, style=self._pulse_style(s)),
             Text(
                 self._duration(a.elapsed_seconds if status == "running" else a.wall_seconds),
-                style=_C_DIM if status == "pending" else "",
+                style=_C_DIM if status == "dispatched" else "",
             ),
             self._tokens(a.usage.input_tokens),
             self._tokens(a.usage.output_tokens),
             self._tokens(a.usage.cache_creation_tokens),
             self._tokens(a.usage.cache_read_tokens),
-            Text(self._tokens(a.usage.total_tokens), style="bold" if status != "pending" else _C_DIM),
+            Text(self._tokens(a.usage.total_tokens), style="bold" if status != "dispatched" else _C_DIM),
             self._cost(a.cost),
             tools_cell,
             self._success_rate(tc, a.usage.tool_errors),
+            "",
         )
 
     def _tool_row(self, name: str, t: Usage.Tool) -> Row:
         return (
+            "",
             Text(f"  {name}", style=_C_DIM), "", "",
             "", "", "", "", "",
             "",
             Text(str(t.calls), style=_C_DIM),
             self._success_rate(t.calls, t.errors),
+            "",
         )
 
 

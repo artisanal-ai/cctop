@@ -11,7 +11,7 @@ from cctop.core.models import Model, ModelUsage, model
 from cctop.core.usage import Usage
 
 type Record = dict[str, Any]
-type AgentRecords = tuple[list[Record], Record | None]
+type AgentRecords = tuple[str, float, list[Record], Record | None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,6 +205,7 @@ def raw_records(path: Path) -> list[Record]:
 
 
 _IGNORED_AGENTS = frozenset({"aside_question"})
+_AGENT_FILE_PREFIX = "agent-"
 
 
 def raw_subagents_records(path: Path) -> list[AgentRecords]:
@@ -213,7 +214,9 @@ def raw_subagents_records(path: Path) -> list[AgentRecords]:
         return []
     return [
         (
-            [json.loads(line) for line in open(f)],
+            f.stem.removeprefix(_AGENT_FILE_PREFIX),
+            f.stat().st_mtime,
+            raw_records(f),
             json.loads(meta.read_text()) if meta.is_file() else None,
         )
         for f in sorted(subagent_dir.glob("agent-*.jsonl"))

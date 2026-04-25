@@ -9,13 +9,14 @@ from rich.text import Text
 from cctop.core import Session
 from cctop.views.keys import Key, KeyListener
 from cctop.views.protocols import Action, LiveViewFactory, Row, View
-from cctop.views.style import _C_ACCENT, _C_DIM
+from cctop.views.style import _C_ACCENT, _C_DIM, _GUTTER
 
 _KEYS: dict[Key, Action] = {
     Key.QUIT: Action.QUIT,
     Key.UP: Action.SCROLL_UP,
     Key.DOWN: Action.SCROLL_DOWN,
     Key.ENTER: Action.SELECT,
+    Key.RIGHT: Action.SELECT,
     Key.DELETE: Action.DELETE,
 }
 
@@ -52,17 +53,21 @@ class SessionPicker(View[Session.Ref | None]):
 
     def _render(self, sessions: list[Session.Ref], cursor: int, term_height: int = 0) -> Group:
         columns = (
-            Column("", width=2, no_wrap=True),
+            Column("", width=1, no_wrap=True),
             Column("PROJECT", no_wrap=True, ratio=1),
             Column("AGE", justify="right", width=10, no_wrap=True),
             Column("SESSION", width=10, no_wrap=True),
+            Column("", width=1, no_wrap=True),
         )
-        table = Table(*columns, show_header=True, header_style="bold", box=None, padding=(0, 1), expand=True)
+        table = Table(
+            *columns, show_header=True, header_style="bold",
+            box=None, padding=(0, 1), expand=True, pad_edge=False,
+        )
         rows = [self._row(s, i == cursor) for i, s in enumerate(sessions)]
         for row in rows:
             table.add_row(*row)
 
-        title = "  cctop — select a session" if sessions else "  cctop — no sessions found"
+        title = f"{_GUTTER}cctop — select a session" if sessions else f"{_GUTTER}cctop — no sessions found"
         padding = max(1, term_height - 5 - len(rows)) if term_height > 0 else 1
         return Group(
             Text(""),
@@ -70,17 +75,17 @@ class SessionPicker(View[Session.Ref | None]):
             Text(""),
             table,
             *([Text("")] * padding),
-            Text("  ↑/↓ navigate  enter select  d delete  q quit", style=_C_DIM),
+            Text(f"{_GUTTER}↑/↓ navigate  enter/→ select  d delete  q quit", style=_C_DIM),
         )
 
     def _row(self, ref: Session.Ref, selected: bool) -> Row:
-        marker = "›" if selected else " "  # noqa: RUF001
+        marker = "›" if selected else ""  # noqa: RUF001
         age = self._age(ref.mtime)
         sid = ref.short_id
         if not selected:
-            return marker, ref.project, age, sid
+            return marker, ref.project, age, sid, ""
         s = f"bold {_C_ACCENT}"
-        return Text(marker, style=s), Text(ref.project, style=s), Text(age, style=s), Text(sid, style=s)
+        return Text(marker, style=s), Text(ref.project, style=s), Text(age, style=s), Text(sid, style=s), ""
 
     def _age(self, mtime: float) -> str:
         delta = time.time() - mtime

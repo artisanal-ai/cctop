@@ -120,7 +120,7 @@ def session(ref: Session.Ref) -> Session:
     user = list(user_records(parent_records))
     notifications = list(notification_records(parent_records))
 
-    agents = [agent(*sa) for sa in subagents]
+    agents = sorted((agent(*sa) for sa in subagents), key=lambda a: a.first_ts, reverse=True)
 
     return Session(
         ref=ref,
