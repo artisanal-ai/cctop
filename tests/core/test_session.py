@@ -183,3 +183,37 @@ def test_session_factory(tmp_path: Path) -> None:
     assert s.agents[0].type == "Explore"
     assert s.usage.input_tokens == 2000
     assert s.statuses.get("abc123") == AgentStatus.DONE
+
+
+def test_session_agents_sorted_newest_first(tmp_path: Path) -> None:
+    proj = tmp_path / "-test-project"
+    proj.mkdir()
+    session_file = proj / "abc12345.jsonl"
+    session_file.write_text("")
+    subdir = proj / "abc12345" / "subagents"
+    subdir.mkdir(parents=True)
+
+    earlier = assistant_rec(msg_id="m_a", ts="2025-03-15T10:01:00Z", agent_id="aaa")
+    later = assistant_rec(msg_id="m_z", ts="2025-03-15T10:05:00Z", agent_id="zzz")
+    (subdir / "agent-aaa.jsonl").write_text(json.dumps(earlier) + "\n")
+    (subdir / "agent-zzz.jsonl").write_text(json.dumps(later) + "\n")
+
+    s = session(Session.Ref(session_file))
+    assert [a.id for a in s.agents] == ["zzz", "aaa"]
+
+
+def test_session_dispatched_agent_no_msgs(tmp_path: Path) -> None:
+    proj = tmp_path / "-test-project"
+    proj.mkdir()
+    session_file = proj / "abc12345.jsonl"
+    session_file.write_text("")
+    subdir = proj / "abc12345" / "subagents"
+    subdir.mkdir(parents=True)
+    (subdir / "agent-fresh.jsonl").write_text("")
+    (subdir / "agent-fresh.meta.json").write_text(json.dumps({"agentType": "Explore"}))
+
+    s = session(Session.Ref(session_file))
+    assert len(s.agents) == 1
+    assert s.agents[0].id == "fresh"
+    assert s.agents[0].type == "Explore"
+    assert s.agents[0].internal_status == AgentStatus.DISPATCHED

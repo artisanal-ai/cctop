@@ -206,14 +206,32 @@ def test_raw_subagents_records(tmp_path: Path) -> None:
     session_file.write_text("")
     subdir = tmp_path / "session" / "subagents"
     subdir.mkdir(parents=True)
-    (subdir / "agent-abc123.jsonl").write_text(json.dumps(assistant_rec(agent_id="abc123")) + "\n")
+    jsonl = subdir / "agent-abc123.jsonl"
+    jsonl.write_text(json.dumps(assistant_rec(agent_id="abc123")) + "\n")
     (subdir / "agent-abc123.meta.json").write_text(json.dumps({"agentType": "Explore", "description": "search"}))
     result = raw_subagents_records(session_file)
     assert len(result) == 1
-    records, meta_dict = result[0]
+    agent_id, dispatched_ts, records, meta_dict = result[0]
+    assert agent_id == "abc123"
+    assert dispatched_ts == jsonl.stat().st_mtime
     assert len(records) == 1
     assert meta_dict is not None
     assert meta_dict["agentType"] == "Explore"
+
+
+def test_raw_subagents_records_no_msgs(tmp_path: Path) -> None:
+    session_file = tmp_path / "session.jsonl"
+    session_file.write_text("")
+    subdir = tmp_path / "session" / "subagents"
+    subdir.mkdir(parents=True)
+    (subdir / "agent-fresh.jsonl").write_text("")
+    (subdir / "agent-fresh.meta.json").write_text(json.dumps({"agentType": "Explore"}))
+    result = raw_subagents_records(session_file)
+    assert len(result) == 1
+    agent_id, _dispatched_ts, records, meta_dict = result[0]
+    assert agent_id == "fresh"
+    assert records == []
+    assert meta_dict == {"agentType": "Explore"}
 
 
 def test_raw_subagents_records_ignores_aside(tmp_path: Path) -> None:
