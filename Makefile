@@ -25,6 +25,6 @@ run: env
 	uv run $(PACKAGE)
 
 clean:
-	rm -rf .coverage .pytest_cache .mypy_cache .ruff_cache
+	rm -rf .venv .coverage .pytest_cache .mypy_cache .ruff_cache
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
