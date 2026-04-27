@@ -1,3 +1,4 @@
+import json
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -20,11 +21,16 @@ def make_agent(agent_id: str = "a1", **overrides: Any) -> Agent:
     return Agent(id=agent_id, **overrides)
 
 
-def make_ref(tmp_path: Path, name: str = "abc12345.jsonl", project_dir: str = "-test-project") -> Session.Ref:
+def make_ref(
+    tmp_path: Path,
+    name: str = "abc12345.jsonl",
+    project_dir: str = "-test-project",
+    cwd: str = "/test/project",
+) -> Session.Ref:
     d = tmp_path / project_dir
     d.mkdir(parents=True, exist_ok=True)
     f = d / name
-    f.write_text("")
+    f.write_text(json.dumps({"cwd": cwd}) + "\n")
     return Session.Ref(f)
 
 

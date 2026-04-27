@@ -13,6 +13,7 @@ from cctop.core.records import (
     notification_records,
     raw_records,
     raw_subagents_records,
+    session_cwd,
     tool_error_ids,
     user_records,
 )
@@ -42,7 +43,7 @@ class Session:
 
         @property
         def project(self) -> str:
-            return Path(self.path.parent.name.lstrip("-").replace("-", "/")).name
+            return Path(session_cwd(self.path)).name
 
     ref: Ref
     agents: list[Agent] = field(default_factory=list)
