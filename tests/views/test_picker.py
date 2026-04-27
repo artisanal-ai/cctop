@@ -68,3 +68,23 @@ def test_display_on_navigate(_sleep: object, tmp_path: Path) -> None:
     action, ref = picker.display_on(fake_console())
     assert action == Action.SELECT
     assert ref == refs[1]
+
+
+@patch("time.sleep")
+def test_display_on_scrolls_past_visible_window(_sleep: object, tmp_path: Path) -> None:
+    refs = [make_ref(tmp_path, name=f"s{i:03}.jsonl") for i in range(50)]
+    keys = [Key.DOWN] * 30 + [Key.ENTER]
+    picker = _picker(refs, key_listener_factory=fake_key_listener(keys))
+    action, ref = picker.display_on(fake_console(height=10))
+    assert action == Action.SELECT
+    assert ref == refs[30]
+
+
+@patch("time.sleep")
+def test_display_on_scrolls_back_up(_sleep: object, tmp_path: Path) -> None:
+    refs = [make_ref(tmp_path, name=f"s{i:03}.jsonl") for i in range(50)]
+    keys = [Key.DOWN] * 30 + [Key.UP] * 25 + [Key.ENTER]
+    picker = _picker(refs, key_listener_factory=fake_key_listener(keys))
+    action, ref = picker.display_on(fake_console(height=10))
+    assert action == Action.SELECT
+    assert ref == refs[5]

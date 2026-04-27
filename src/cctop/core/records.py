@@ -182,6 +182,14 @@ def raw_records(path: Path) -> list[Record]:
         return [json.loads(line) for line in f]
 
 
+def session_cwd(path: Path) -> str:
+    with open(path) as f:
+        for line in f:
+            if c := json.loads(line).get("cwd"):
+                return str(c)
+    raise ValueError(f"no cwd in {path}")
+
+
 _IGNORED_AGENTS = frozenset({"aside_question"})
 _AGENT_FILE_PREFIX = "agent-"
 

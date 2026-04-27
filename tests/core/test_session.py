@@ -24,13 +24,18 @@ def test_ref_short_id(tmp_path: Path) -> None:
     assert ref.short_id == "abc12345"
 
 
-@pytest.mark.parametrize(
-    ("dir_name", "expected"),
-    [("-Users-me-myproject", "myproject"), ("-home-user-app", "app"), ("simple", "simple")],
-)
-def test_ref_project(tmp_path: Path, dir_name: str, expected: str) -> None:
-    ref = make_ref(tmp_path, project_dir=dir_name)
-    assert ref.project == expected
+def test_ref_project_uses_cwd_from_jsonl(tmp_path: Path) -> None:
+    ref = make_ref(tmp_path, cwd="/Users/me/Projects/foo.bar")
+    assert ref.project == "foo.bar"
+
+
+def test_ref_project_skips_records_without_cwd(tmp_path: Path) -> None:
+    ref = make_ref(tmp_path)
+    ref.path.write_text(
+        json.dumps({"type": "permission-mode"}) + "\n"
+        + json.dumps({"type": "user", "cwd": "/Users/me/Projects/foo.bar"}) + "\n"
+    )
+    assert ref.project == "foo.bar"
 
 
 def test_ref_mtime_existing(tmp_path: Path) -> None:
