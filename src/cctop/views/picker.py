@@ -29,7 +29,8 @@ class SessionPicker(View[Session.Ref | None]):
     def display_on(self, console: Console) -> tuple[Action, Session.Ref | None]:
         sessions = list(self.sessions_finder())
         cursor = 0
-        content = self._render(sessions, cursor, console.height)
+        top = 0
+        content = self._render(sessions, cursor, top, console.height)
         with self.key_listener_factory() as keys, self.live_view_factory(content, console) as live:
             while True:
                 time.sleep(0.1)
@@ -44,9 +45,12 @@ class SessionPicker(View[Session.Ref | None]):
                         cursor = max(0, cursor - 1)
                     case Action.SCROLL_DOWN if sessions:
                         cursor = min(len(sessions) - 1, cursor + 1)
-                live.update(self._render(sessions, cursor, console.height))
+                top = _scroll_top(top, cursor, _visible(console.height))
+                live.update(self._render(sessions, cursor, top, console.height))
 
-    def _render(self, sessions: list[Session.Ref], cursor: int, term_height: int = 0) -> Group:
+    def _render(self, sessions: list[Session.Ref], cursor: int, top: int, term_height: int = 0) -> Group:
+        visible = _visible(term_height) if term_height > 0 else len(sessions)
+        window = sessions[top:top + visible]
         columns = (
             Column("", width=1, no_wrap=True),
             Column("PROJECT", no_wrap=True, ratio=1),
@@ -58,11 +62,14 @@ class SessionPicker(View[Session.Ref | None]):
             *columns, show_header=True, header_style="bold",
             box=None, padding=(0, 1), expand=True, pad_edge=False,
         )
-        rows = [self._row(s, i == cursor) for i, s in enumerate(sessions)]
+        rows = [self._row(s, top + i == cursor) for i, s in enumerate(window)]
         for row in rows:
             table.add_row(*row)
 
-        title = f"{_GUTTER}cctop — select a session" if sessions else f"{_GUTTER}cctop — no sessions found"
+        title = (
+            f"{_GUTTER}cctop — no sessions found" if not sessions
+            else f"{_GUTTER}cctop — select a session  ({cursor + 1}/{len(sessions)})"
+        )
         padding = max(1, term_height - 5 - len(rows)) if term_height > 0 else 1
         return Group(
             Text(""),
@@ -91,3 +98,15 @@ class SessionPicker(View[Session.Ref | None]):
         if delta < 86400:
             return f"{int(delta / 3600)}h ago"
         return f"{int(delta / 86400)}d ago"
+
+
+def _visible(term_height: int) -> int:
+    return max(1, term_height - 6)
+
+
+def _scroll_top(top: int, cursor: int, visible: int) -> int:
+    if cursor < top:
+        return cursor
+    if cursor >= top + visible:
+        return cursor - visible + 1
+    return top
