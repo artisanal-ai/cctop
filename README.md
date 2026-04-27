@@ -1,6 +1,10 @@
 # cctop
 
-htop for Claude Code sessions — per-agent token usage, cost, and tool call monitoring.
+*Per-agent token usage, cost, and tool call monitoring for any Claude Code session.*
+
+A Claude Code session can fan out into a swarm of subagents in seconds, and the meter starts spinning. cctop tails the live session log and breaks it down agent by agent — tokens in, tokens out, cache hits, dollars, tools called. So when the bill arrives, you know where it went.
+
+![cctop demo](demo/cctop_demo.gif)
 
 ## Prerequisites
 
