@@ -10,6 +10,7 @@ A Claude Code session can fan out into a swarm of subagents in seconds, and the 
 
 - [uv](https://docs.astral.sh/uv/) (tested with v0.11.7)
 - [Claude Code](https://claude.com/product/claude-code) (tested with v2.1.119)
+- macOS/Linux
 
 ## Install
 
