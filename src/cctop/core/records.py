@@ -178,16 +178,16 @@ def model_usage(msgs: list[AssistantRecord]) -> ModelUsage:
 
 
 def raw_records(path: Path) -> list[Record]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return [json.loads(line) for line in f]
 
 
-def session_cwd(path: Path) -> str:
-    with open(path) as f:
+def session_cwd(path: Path) -> Path | None:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             if c := json.loads(line).get("cwd"):
-                return str(c)
-    raise ValueError(f"no cwd in {path}")
+                return Path(c)
+    return None
 
 
 _IGNORED_AGENTS = frozenset({"aside_question"})
@@ -203,7 +203,7 @@ def raw_subagents_records(path: Path) -> list[AgentRecords]:
             f.stem.removeprefix(_AGENT_FILE_PREFIX),
             f.stat().st_mtime,
             raw_records(f),
-            json.loads(meta.read_text()) if meta.is_file() else None,
+            json.loads(meta.read_text(encoding="utf-8")) if meta.is_file() else None,
         )
         for f in sorted(subagent_dir.glob("agent-*.jsonl"))
         if not any(tag in f.stem for tag in _IGNORED_AGENTS)

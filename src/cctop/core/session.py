@@ -43,7 +43,9 @@ class Session:
 
         @property
         def project(self) -> str:
-            return Path(session_cwd(self.path)).name
+            if cwd := session_cwd(self.path):
+                return cwd.name
+            return self.path.parent.name.rsplit("-", 1)[-1]
 
     ref: Ref
     agents: list[Agent] = field(default_factory=list)

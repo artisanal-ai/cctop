@@ -38,6 +38,15 @@ def test_ref_project_skips_records_without_cwd(tmp_path: Path) -> None:
     assert ref.project == "foo.bar"
 
 
+def test_ref_project_falls_back_to_parent_dir_when_no_cwd(tmp_path: Path) -> None:
+    ref = make_ref(tmp_path, project_dir="-Users-me-Projects-helvet-ai-cctop")
+    ref.path.write_text(
+        json.dumps({"type": "last-prompt", "lastPrompt": "x"}) + "\n"
+        + json.dumps({"type": "permission-mode"}) + "\n"
+    )
+    assert ref.project == "cctop"
+
+
 def test_ref_mtime_existing(tmp_path: Path) -> None:
     ref = make_ref(tmp_path)
     assert ref.mtime > 0

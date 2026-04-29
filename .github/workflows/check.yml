@@ -5,10 +5,19 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  check-linux:
     runs-on: ubuntu-latest
     container: ghcr.io/astral-sh/uv:python3.13-alpine
     steps:
       - uses: actions/checkout@v4
       - run: apk add --no-cache make
+      - run: make check
+
+  check-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
       - run: make check
