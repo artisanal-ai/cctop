@@ -1,49 +1,63 @@
-from cctop.views.keys import Key, _parse
+from blessed.keyboard import Keystroke
+
+from cctop.views.keys import Key, _map
 
 
-def test_parse_arrow_up() -> None:
-    assert _parse(b"\x1b[A") == Key.UP
+def _seq(name: str) -> Keystroke:
+    return Keystroke(ucs="\x00", code=1, name=name)
 
 
-def test_parse_arrow_down() -> None:
-    assert _parse(b"\x1b[B") == Key.DOWN
+def _char(c: str) -> Keystroke:
+    return Keystroke(ucs=c)
 
 
-def test_parse_arrow_left() -> None:
-    assert _parse(b"\x1b[D") == Key.LEFT
+def test_map_arrow_up() -> None:
+    assert _map(_seq("KEY_UP")) == Key.UP
 
 
-def test_parse_arrow_right() -> None:
-    assert _parse(b"\x1b[C") == Key.RIGHT
+def test_map_arrow_down() -> None:
+    assert _map(_seq("KEY_DOWN")) == Key.DOWN
 
 
-def test_parse_enter_cr() -> None:
-    assert _parse(b"\r") == Key.ENTER
+def test_map_arrow_left() -> None:
+    assert _map(_seq("KEY_LEFT")) == Key.LEFT
 
 
-def test_parse_enter_newline() -> None:
-    assert _parse(b"\n") == Key.ENTER
+def test_map_arrow_right() -> None:
+    assert _map(_seq("KEY_RIGHT")) == Key.RIGHT
 
 
-def test_parse_quit() -> None:
-    assert _parse(b"q") == Key.QUIT
+def test_map_enter_keycode() -> None:
+    assert _map(_seq("KEY_ENTER")) == Key.ENTER
 
 
-def test_parse_quit_uppercase() -> None:
-    assert _parse(b"Q") == Key.QUIT
+def test_map_enter_cr() -> None:
+    assert _map(_char("\r")) == Key.ENTER
 
 
-def test_parse_tools() -> None:
-    assert _parse(b"t") == Key.TOOLS
+def test_map_enter_newline() -> None:
+    assert _map(_char("\n")) == Key.ENTER
 
 
-def test_parse_unknown() -> None:
-    assert _parse(b"x") is None
+def test_map_quit() -> None:
+    assert _map(_char("q")) == Key.QUIT
 
 
-def test_parse_empty() -> None:
-    assert _parse(b"") is None
+def test_map_quit_uppercase() -> None:
+    assert _map(_char("Q")) == Key.QUIT
 
 
-def test_parse_escape_takes_priority() -> None:
-    assert _parse(b"\x1b[A" + b"q") == Key.UP
+def test_map_tools() -> None:
+    assert _map(_char("t")) == Key.TOOLS
+
+
+def test_map_tools_uppercase() -> None:
+    assert _map(_char("T")) == Key.TOOLS
+
+
+def test_map_unknown_char() -> None:
+    assert _map(_char("x")) is None
+
+
+def test_map_unknown_sequence() -> None:
+    assert _map(_seq("KEY_F1")) is None
