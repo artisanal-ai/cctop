@@ -7,6 +7,7 @@ import typer
 from rich.console import Console, ConsoleRenderable
 from rich.live import Live
 
+from cctop.core.quota import cached, quota
 from cctop.core.session import session, session_refs
 from cctop.views.monitor import SessionMonitor
 from cctop.views.picker import SessionPicker
@@ -23,7 +24,8 @@ def _show_version(value: bool) -> None:
 
 @app.command()
 def main(
-    refresh: Annotated[float, typer.Option(help="Data reload interval in seconds")] = 2.0,
+    data_refresh: Annotated[float, typer.Option(help="Data reload interval in seconds")] = 2.0,
+    quota_refresh: Annotated[float, typer.Option(help="Quota reload interval in seconds")] = 120.0,
     fps: Annotated[int, typer.Option(help="View render frames per second")] = 10,
     version: Annotated[
         bool,
@@ -32,8 +34,13 @@ def main(
 ) -> None:
     def live_view(content: ConsoleRenderable, console: Console) -> AbstractContextManager[Live]:
         return Live(content, console=console, refresh_per_second=fps, screen=True)
+    quota_loader = cached(quota, ttl=quota_refresh)
     session_monitor = partial(
-        SessionMonitor, session_loader=session, live_view_factory=live_view, refresh=refresh,
+        SessionMonitor,
+        session_loader=session,
+        live_view_factory=live_view,
+        quota_loader=quota_loader,
+        refresh=data_refresh,
     )
     session_picker = SessionPicker(sessions_finder=session_refs, live_view_factory=live_view)
     console = Console()

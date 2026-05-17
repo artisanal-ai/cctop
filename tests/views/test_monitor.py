@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -7,6 +8,7 @@ from rich.text import Text
 
 from cctop.core.agents import Agent
 from cctop.core.models import SONNET_4_5
+from cctop.core.quota import Bucket, Quota
 from cctop.core.session import Session
 from cctop.core.usage import Usage
 from cctop.views.keys import Key
@@ -134,3 +136,52 @@ def test_display_on_scroll(_sleep: object, tmp_path: Path) -> None:
     m = _monitor(tmp_path, key_listener_factory=fake_key_listener([Key.DOWN, Key.DOWN, Key.QUIT]))
     m.display_on(fake_console())
     assert m.scroll >= 0
+
+
+def _bucket(util: float, secs: float) -> Bucket:
+    return Bucket(utilization=util, resets_at=datetime.now(UTC) + timedelta(seconds=secs))
+
+
+def test_quota_cell_none_renders_empty() -> None:
+    assert _monitor()._quota_cell(None).plain == ""
+
+
+def test_quota_cell_renders_both_bars() -> None:
+    q = Quota(five_hour=_bucket(50.0, 3600), seven_day=_bucket(10.0, 86400 * 3))
+    plain = _monitor()._quota_cell(q).plain
+    assert "5h" in plain and "7d" in plain
+    assert "50%" in plain and "10%" in plain
+
+
+@pytest.mark.parametrize(
+    ("util", "filled_count"),
+    [(0.0, 0), (50.0, 5), (95.0, 10), (100.0, 10), (150.0, 10), (-5.0, 0)],
+)
+def test_bar_fill(util: float, filled_count: int) -> None:
+    text = _monitor()._bar("5h", _bucket(util, 3600))
+    assert text.plain.count("▓") == filled_count
+
+
+@pytest.mark.parametrize(
+    ("secs", "expected"),
+    [(-10, "now"), (0, "now"), (45, "0m"), (90, "1m"), (3600 + 23 * 60, "1h23m"), (86400 * 3, "3d")],
+)
+def test_reset_format(secs: float, expected: str) -> None:
+    fixed_now = datetime(2026, 1, 1, tzinfo=UTC)
+    with patch("cctop.views.monitor.datetime") as dt_mock:
+        dt_mock.now.return_value = fixed_now
+        assert _monitor()._reset(fixed_now + timedelta(seconds=secs)) == expected
+
+
+@patch("time.sleep")
+def test_display_on_calls_quota_loader(_sleep: object, tmp_path: Path) -> None:
+    q = Quota(five_hour=_bucket(33.0, 3600), seven_day=_bucket(11.0, 86400 * 5))
+    calls: list[int] = []
+
+    def loader() -> Quota | None:
+        calls.append(1)
+        return q
+
+    m = _monitor(tmp_path, key_listener_factory=fake_key_listener([Key.QUIT]), quota_loader=loader)
+    m.display_on(fake_console())
+    assert calls

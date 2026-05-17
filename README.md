@@ -24,7 +24,8 @@ uv tool install git+https://github.com/artisanal-ai/cctop
 Usage: cctop [OPTIONS]
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --refresh        FLOAT    Data reload interval in seconds [default: 2.0]     │
+│ --data-refresh   FLOAT    Data reload interval in seconds [default: 2.0]     │
+│ --quota-refresh  FLOAT    Quota reload interval in seconds [default: 120.0]  │
 │ --fps            INTEGER  View render frames per second [default: 10]        │
 │ --version                 Show version and exit                              │
 │ --help                    Show this message and exit.                        │
