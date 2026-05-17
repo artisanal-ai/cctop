@@ -1,13 +1,15 @@
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import NamedTuple
 
 from rich.console import Console, Group
 from rich.table import Table
 from rich.text import Text
 
-from cctop.core import Agent, Session
+from cctop.core import Agent, Quota, Session
+from cctop.core.quota import Bucket
 from cctop.core.usage import Usage
 from cctop.views.keys import Key, KeyListener
 from cctop.views.protocols import Action, LiveViewFactory, Row, View
@@ -44,6 +46,7 @@ class SessionMonitor(View[Session]):
     session_loader: Callable[[Session.Ref], Session]
     live_view_factory: LiveViewFactory
     key_listener_factory: Callable[[], KeyListener] = KeyListener
+    quota_loader: Callable[[], Quota | None] = field(default=lambda: None)
     refresh: float = 2.0
     show_tools: bool = False
     scroll: int = 0
@@ -119,8 +122,14 @@ class SessionMonitor(View[Session]):
 
         padding = max(1, term_height - fixed_overhead - len(visible)) if term_height > 0 else 1
 
+        header = Table(show_header=False, box=None, padding=(0, 1), expand=True, pad_edge=False)
+        header.add_column(ratio=1, no_wrap=True)
+        header.add_column(justify="right", no_wrap=True)
+        header.add_column(width=1, no_wrap=True)
+        header.add_row(Text(f"{_GUTTER}{title}", style="bold"), self._quota_cell(self.quota_loader()), "")
+
         return Group(
-            Text(""), Text(f"{_GUTTER}{title}", style="bold"),
+            Text(""), header,
             Text(""), table,
             *([Text("")] * padding), footer,
         ), clamped
@@ -297,3 +306,31 @@ class SessionMonitor(View[Session]):
         if usd < 10:
             return f"${usd:.2f}"
         return f"${usd:.1f}"
+
+    def _quota_cell(self, q: Quota | None) -> Text:
+        if q is None:
+            return Text("")
+        return Text.assemble(self._bar("5h", q.five_hour), "  ", self._bar("7d", q.seven_day))
+
+    def _bar(self, label: str, b: Bucket) -> Text:
+        pct = max(0.0, min(100.0, b.utilization))
+        filled = round(pct / 10)
+        style = _C_ERR if pct >= 95 else _C_WARN if pct >= 80 else _C_OK
+        return Text.assemble(
+            (f"{label} ", _C_DIM),
+            ("▓" * filled, style),
+            ("░" * (10 - filled), _C_DIM),
+            (f" {pct:.0f}%", style),
+            (f" · {self._reset(b.resets_at)}", _C_DIM),
+        )
+
+    def _reset(self, when: datetime) -> str:
+        secs = (when - datetime.now(UTC)).total_seconds()
+        if secs <= 0:
+            return "now"
+        days, secs = divmod(int(secs), 86400)
+        if days:
+            return f"{days}d"
+        hours, secs = divmod(secs, 3600)
+        minutes = secs // 60
+        return f"{hours}h{minutes:02d}m" if hours else f"{minutes}m"
