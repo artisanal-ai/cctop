@@ -18,6 +18,12 @@ A Claude Code session can fan out into a swarm of subagents in seconds, and the 
 uv tool install git+https://github.com/artisanal-ai/cctop
 ```
 
+## Update
+
+```bash
+uv tool upgrade cctop   # pull the latest release; check with `cctop --version`
+```
+
 ## Usage
 
 ```

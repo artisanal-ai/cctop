@@ -21,7 +21,7 @@ _HTTP_TIMEOUT = 5.0
 @dataclass(frozen=True, slots=True)
 class Bucket:
     utilization: float
-    resets_at: datetime
+    resets_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +60,11 @@ def _token() -> str | None:
 
 
 def _bucket(d: dict[str, Any]) -> Bucket:
-    return Bucket(utilization=float(d["utilization"]), resets_at=datetime.fromisoformat(d["resets_at"]))
+    resets_at = d["resets_at"]
+    return Bucket(
+        utilization=float(d["utilization"]),
+        resets_at=datetime.fromisoformat(resets_at) if resets_at else None,
+    )
 
 
 def _fetch(token: str) -> dict[str, Any]:

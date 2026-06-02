@@ -162,6 +162,12 @@ def test_bar_fill(util: float, filled_count: int) -> None:
     assert text.plain.count("▓") == filled_count
 
 
+def test_bar_omits_reset_when_missing() -> None:
+    text = _monitor()._bar("5h", Bucket(utilization=0.0, resets_at=None))
+    assert "·" not in text.plain
+    assert "5h" in text.plain and "0%" in text.plain
+
+
 @pytest.mark.parametrize(
     ("secs", "expected"),
     [(-10, "now"), (0, "now"), (45, "0m"), (90, "1m"), (3600 + 23 * 60, "1h23m"), (86400 * 3, "3d")],

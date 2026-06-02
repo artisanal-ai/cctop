@@ -43,6 +43,20 @@ def test_quota_uses_env_token(urlopen: MagicMock) -> None:
     assert req.headers["Anthropic-beta"] == "oauth-2025-04-20"
 
 
+@patch.dict("os.environ", {"CLAUDE_CODE_OAUTH_TOKEN": "env-token"})
+@patch("urllib.request.urlopen")
+def test_quota_handles_null_resets_at(urlopen: MagicMock) -> None:
+    payload = {
+        "five_hour": {"utilization": 0.0, "resets_at": None},
+        "seven_day": {"utilization": 14.0, "resets_at": _SEVEN_DAY_TS},
+    }
+    urlopen.return_value = _urlopen_mock(payload)
+    q = quota()
+    assert q is not None
+    assert q.five_hour == Bucket(0.0, None)
+    assert q.seven_day == Bucket(14.0, datetime.fromisoformat(_SEVEN_DAY_TS))
+
+
 @patch.dict("os.environ", {}, clear=True)
 @patch("platform.system", return_value="Darwin")
 @patch("subprocess.run")
