@@ -316,12 +316,13 @@ class SessionMonitor(View[Session]):
         pct = max(0.0, min(100.0, b.utilization))
         filled = round(pct / 10)
         style = _C_ERR if pct >= 95 else _C_WARN if pct >= 80 else _C_OK
+        reset = f" · {self._reset(b.resets_at)}" if b.resets_at else ""
         return Text.assemble(
             (f"{label} ", _C_DIM),
             ("▓" * filled, style),
             ("░" * (10 - filled), _C_DIM),
             (f" {pct:.0f}%", style),
-            (f" · {self._reset(b.resets_at)}", _C_DIM),
+            (reset, _C_DIM),
         )
 
     def _reset(self, when: datetime) -> str:
